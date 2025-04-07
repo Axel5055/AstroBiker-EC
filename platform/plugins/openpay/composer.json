@@ -1,0 +1,8 @@
+{
+    "name": "botble/openpay",
+    "description": "Openpay Payment Gateway",
+    "type": "package",
+    "require": {
+        "openpay/sdk": "^3.1.0"
+    }
+}

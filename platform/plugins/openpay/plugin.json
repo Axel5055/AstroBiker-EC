@@ -1,0 +1,13 @@
+{
+    "id": "botble/openpay",
+    "name": "Openpay Payment Gateway",
+    "namespace": "Botble\\Openpay\\",
+    "provider": "Botble\\Openpay\\Providers\\OpenpayServiceProvider",
+    "author": "Mycleth",
+    "url": "https://www.openpay.mx/",
+    "version": "3.1.0",
+    "description": "Openpay payment gateway integration",
+    "require": [
+        "botble/payment"
+    ]
+}

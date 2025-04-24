@@ -1,6 +1,6 @@
 <div class="ps-product__header">
     <div class="ps-product__thumbnail" data-vertical="false">
-        <div class="ps-product__images" data-arrow="true">
+        <div class="bb-quick-view-gallery-images" data-arrow="true">
             @foreach ($productImages as $img)
                 <div class="item"><img src="{{ RvMedia::getImageUrl($img) }}" alt="{{ $product->name }}"></div>
             @endforeach

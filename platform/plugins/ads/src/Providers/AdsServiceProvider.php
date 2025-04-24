@@ -44,7 +44,7 @@ class AdsServiceProvider extends ServiceProvider
             ->loadAndPublishConfigurations(['permissions', 'general'])
             ->loadMigrations()
             ->loadAndPublishTranslations()
-            ->loadRoutes()
+            ->loadRoutes(['web', 'api'])
             ->loadHelpers()
             ->loadAndPublishViews();
 
@@ -120,6 +120,8 @@ class AdsServiceProvider extends ServiceProvider
             LanguageAdvancedManager::registerModule(Ads::class, [
                 'name',
                 'image',
+                'tablet_image',
+                'mobile_image',
                 'url',
             ]);
         }

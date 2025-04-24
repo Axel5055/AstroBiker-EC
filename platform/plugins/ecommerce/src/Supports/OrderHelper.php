@@ -42,10 +42,12 @@ use Botble\Ecommerce\Models\ShipmentHistory;
 use Botble\Ecommerce\Models\ShippingRule;
 use Botble\Ecommerce\Models\Tax;
 use Botble\Ecommerce\Services\Footprints\FootprinterInterface;
+use Botble\Media\Facades\RvMedia;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Facades\PaymentMethods;
 use Botble\Payment\Models\Payment;
+use Botble\Payment\Supports\PaymentFeeHelper;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -274,17 +276,17 @@ class OrderHelper
             )
                 ->render(),
             'order' => [
-                $order->toArray(),
+                ...$order->toArray(),
                 'created_at' => $order->created_at->toDateTimeString(),
                 'updated_at' => $order->updated_at->toDateTimeString(),
             ],
             'shipment' => $order->shipment ? [
-                $order->shipment->toArray(),
-                'created_at' => $order->shipment->created_at->toDateTimeString(),
-                'updated_at' => $order->shipment->updated_at->toDateTimeString(),
-                'estimate_date_shipped' => $order->shipment->estimate_date_shipped ? $order->shipment->estimate_date_shipped->toDateTimeString() : null,
-                'date_shipped' => $order->shipment->date_shipped ? $order->shipment->date_shipped->toDateTimeString() : null,
-                'customer_delivered_confirmed_at' => $order->shipment->customer_delivered_confirmed_at ? $order->shipment->customer_delivered_confirmed_at->toDateTimeString() : null,
+                ...$order->shipment->toArray(),
+                'created_at' => $order->shipment->created_at?->toDateTimeString(),
+                'updated_at' => $order->shipment->updated_at?->toDateTimeString(),
+                'estimate_date_shipped' => $order->shipment->estimate_date_shipped?->toDateTimeString(),
+                'date_shipped' => $order->shipment->date_shipped?->toDateTimeString(),
+                'customer_delivered_confirmed_at' => $order->shipment->customer_delivered_confirmed_at?->toDateTimeString(),
             ] : [],
             'address' => $order->address->toArray(),
             'products' => $order->products->toArray(),
@@ -540,7 +542,7 @@ class OrderHelper
         session()->forget('tracked_start_checkout');
     }
 
-    public function handleAddCart(Product $product, Request $request): array
+    public function handleAddCart(Product $product, Request $request, bool $relativePath = true): array
     {
         if ($product->status != BaseStatusEnum::PUBLISHED) {
             throw new ProductIsNotActivatedYetException();
@@ -548,7 +550,6 @@ class OrderHelper
 
         $parentProduct = $product->original_product;
 
-        $image = $product->image ?: $parentProduct->image;
         $options = [];
         if ($requestOption = $request->input('options')) {
             $options = $this->getProductOptionData($requestOption);
@@ -556,7 +557,7 @@ class OrderHelper
 
         $taxClasses = $parentProduct
             ->taxes()
-            ->select(['id', 'title', 'percentage'])
+            ->select(['ec_taxes.id', 'ec_taxes.title', 'ec_taxes.percentage'])
             ->get()
             ->mapWithKeys(function ($tax) {
                 return [$tax->title => $tax->percentage];
@@ -572,6 +573,12 @@ class OrderHelper
                 $taxClasses = [$tax->title => $tax->percentage];
                 $taxRate = $tax->percentage;
             }
+        }
+
+        $image = $product->image ?: $parentProduct->image;
+
+        if (! $relativePath) {
+            $image = RvMedia::getImageUrl($image);
         }
 
         /**
@@ -951,10 +958,22 @@ class OrderHelper
 
         $lastUpdatedAt = Cart::instance('cart')->getLastUpdatedAt();
 
+        // Get payment fee if applicable
+        $paymentFee = 0;
+        $paymentMethod = $request->input('payment_method');
+        if ($paymentMethod && is_plugin_active('payment')) {
+            $orderAmount = Cart::instance('cart')->rawTotalByItems($cartItems);
+            $paymentFee = PaymentFeeHelper::calculateFee($paymentMethod, $orderAmount);
+        }
+
+        // Calculate total amount including payment fee
+        $amount = Cart::instance('cart')->rawTotalByItems($cartItems) + $paymentFee;
+
         $data = array_merge([
-            'amount' => Cart::instance('cart')->rawTotalByItems($cartItems),
+            'amount' => $amount,
             'shipping_method' => $request->input('shipping_method', ShippingMethodEnum::DEFAULT),
             'shipping_option' => $request->input('shipping_option'),
+            'payment_fee' => $paymentFee,
             'tax_amount' => Cart::instance('cart')->rawTaxByItems($cartItems),
             'sub_total' => Cart::instance('cart')->rawSubTotalByItems($cartItems),
             'coupon_code' => session()->get('applied_coupon_code'),
@@ -985,12 +1004,24 @@ class OrderHelper
 
     public function createOrder(Request $request, int|string $currentUserId, string $token, array $cartItems)
     {
+        // Get payment fee if applicable
+        $paymentFee = 0;
+        $paymentMethod = $request->input('payment_method');
+        if ($paymentMethod && is_plugin_active('payment')) {
+            $orderAmount = Cart::instance('cart')->rawTotalByItems($cartItems);
+            $paymentFee = PaymentFeeHelper::calculateFee($paymentMethod, $orderAmount);
+        }
+
+        // Calculate total amount including payment fee
+        $amount = Cart::instance('cart')->rawTotalByItems($cartItems) + $paymentFee;
+
         $request->merge([
-            'amount' => Cart::instance('cart')->rawTotalByItems($cartItems),
+            'amount' => $amount,
             'user_id' => $currentUserId,
             'shipping_method' => $request->input('shipping_method', ShippingMethodEnum::DEFAULT),
             'shipping_option' => $request->input('shipping_option'),
             'shipping_amount' => 0,
+            'payment_fee' => $paymentFee,
             'tax_amount' => Cart::instance('cart')->rawTaxByItems($cartItems),
             'sub_total' => Cart::instance('cart')->rawSubTotalByItems($cartItems),
             'coupon_code' => session()->get('applied_coupon_code'),
@@ -1183,11 +1214,13 @@ class OrderHelper
 
         $order->save();
 
-        $payment = Payment::query()->where('order_id', $order->getKey())->first();
+        if (is_plugin_active('payment')) {
+            $payment = Payment::query()->where('order_id', $order->getKey())->first();
 
-        if ($payment && Auth::check()) {
-            $payment->user_id = Auth::id();
-            $payment->save();
+            if ($payment && Auth::check()) {
+                $payment->user_id = Auth::id();
+                $payment->save();
+            }
         }
 
         event(

@@ -8,6 +8,7 @@ use Botble\Ecommerce\Facades\EcommerceHelper;
 use Botble\Ecommerce\Facades\OrderHelper;
 use Botble\Ecommerce\Models\Order;
 use Botble\Ecommerce\ValueObjects\CheckoutOrderData;
+use Botble\Payment\Supports\PaymentFeeHelper;
 use Botble\Payment\Supports\PaymentHelper;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -191,6 +192,16 @@ class HandleCheckoutOrderData
         $orderAmount = max($rawTotal - $promotionDiscountAmount - $couponDiscountAmount, 0);
         $orderAmount += (float) $shippingAmount;
 
+        // Add payment fee if applicable
+        $paymentFee = 0;
+        if ($paymentMethod && is_plugin_active('payment')) {
+            $paymentFee = PaymentFeeHelper::calculateFee($paymentMethod, $orderAmount);
+            $orderAmount += $paymentFee;
+        }
+
+        // Store payment fee in session
+        Arr::set($sessionCheckoutData, 'payment_fee', $paymentFee);
+
         return new CheckoutOrderData(
             shipping: $shipping,
             sessionCheckoutData: $sessionCheckoutData,
@@ -200,7 +211,8 @@ class HandleCheckoutOrderData
             promotionDiscountAmount: $promotionDiscountAmount,
             couponDiscountAmount: $couponDiscountAmount,
             defaultShippingMethod: $defaultShippingMethod,
-            defaultShippingOption: $defaultShippingOption
+            defaultShippingOption: $defaultShippingOption,
+            paymentFee: $paymentFee
         );
     }
 }

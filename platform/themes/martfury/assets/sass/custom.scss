@@ -2420,6 +2420,17 @@ ul.visual-swatch.color-swatch {
     overflow-y: auto;
 }
 
+ul.bb-social-sharing {
+    padding: 0;
+    gap: 0.5rem;
+}
+
+.bb-product-gallery-horizontal {
+    .bb-product-gallery-thumbnails {
+        margin-top: 20px;
+    }
+}
+
 @media (max-width: 768px) {
     .bb-product-form-filter {
         .bb-product-filter {

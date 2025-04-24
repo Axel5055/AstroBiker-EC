@@ -2,6 +2,7 @@
 
 use Botble\Ads\Facades\AdsManager;
 use Botble\Base\Facades\EmailHandler;
+use Botble\Ecommerce\Facades\EcommerceHelper;
 use Botble\Ecommerce\Facades\FlashSale;
 use Botble\Ecommerce\Supports\FlashSaleSupport;
 use Botble\Media\Facades\RvMedia;
@@ -35,8 +36,13 @@ app()->booted(function (): void {
     ThemeSupport::registerLazyLoadImages();
     ThemeSupport::registerToastNotification();
 
-    if (method_exists(FlashSaleSupport::class, 'addShowSaleCountLeftSetting')) {
-        FlashSale::addShowSaleCountLeftSetting();
+    if (is_plugin_active('ecommerce')) {
+        if (method_exists(FlashSaleSupport::class, 'addShowSaleCountLeftSetting')) {
+            FlashSale::addShowSaleCountLeftSetting();
+        }
+
+        EcommerceHelper::registerProductGalleryOptions();
+        EcommerceHelper::registerProductVideo();
     }
 
     RvMedia::addSize('medium', 790, 510)

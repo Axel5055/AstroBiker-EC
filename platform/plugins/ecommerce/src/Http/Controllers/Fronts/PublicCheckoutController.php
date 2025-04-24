@@ -38,6 +38,7 @@ use Botble\Ecommerce\Services\HandleShippingFeeService;
 use Botble\Ecommerce\Services\HandleTaxService;
 use Botble\Optimize\Facades\OptimizerHelper;
 use Botble\Payment\Enums\PaymentStatusEnum;
+use Botble\Payment\Supports\PaymentFeeHelper;
 use Botble\Payment\Supports\PaymentHelper;
 use Botble\Theme\Facades\Theme;
 use Exception;
@@ -737,6 +738,16 @@ class PublicCheckoutController extends BaseController
 
         $orderAmount += (float) $shippingAmount;
 
+        // Add payment fee if applicable
+        $paymentFee = 0;
+        if ($paymentMethod && is_plugin_active('payment')) {
+            $paymentFee = PaymentFeeHelper::calculateFee($paymentMethod, $orderAmount);
+            $orderAmount += $paymentFee;
+        }
+
+        // Store payment fee in request
+        $request->merge(['payment_fee' => $paymentFee]);
+
         $request->merge([
             'amount' => $orderAmount ?: 0,
             'currency' => $request->input('currency', strtoupper(get_application_currency()->title)),
@@ -744,6 +755,7 @@ class PublicCheckoutController extends BaseController
             'shipping_method' => $isAvailableShipping ? $shippingMethodInput : '',
             'shipping_option' => $isAvailableShipping ? $request->input('shipping_option') : null,
             'shipping_amount' => (float) $shippingAmount,
+            'payment_fee' => (float) $paymentFee,
             'tax_amount' => Cart::instance('cart')->rawTax(),
             'sub_total' => Cart::instance('cart')->rawSubTotal(),
             'coupon_code' => session('applied_coupon_code'),

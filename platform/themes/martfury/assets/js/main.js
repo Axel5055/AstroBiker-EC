@@ -154,6 +154,8 @@
                     let currentPosition = $(this).scrollTop();
                     if (currentPosition > checkpoint) {
                         el.addClass('header--sticky');
+
+                        initMegaMenu()
                     } else {
                         el.removeClass('header--sticky');
                     }

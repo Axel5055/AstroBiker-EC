@@ -68,6 +68,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Intervention\Image\ImageManager imageManager(string|null $driver = null)
  * @method static bool canOnlyViewOwnMedia()
  * @method static responseDownloadFile(string $filePath)
+ * @method static array getAvailableDrivers()
  *
  * @see \Botble\Media\RvMedia
  */

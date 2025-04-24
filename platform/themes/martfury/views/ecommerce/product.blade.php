@@ -12,27 +12,8 @@
                 <div class="ps-page__left">
                     <div class="ps-product--detail ps-product--fullwidth">
                         <div class="ps-product__header">
-                            <div class="ps-product__thumbnail" data-vertical="true">
-                                <figure>
-                                    <div class="ps-wrapper">
-                                        <div class="ps-product__gallery" data-arrow="false">
-                                            @foreach ($productImages as $img)
-                                                <div class="item">
-                                                    <a href="{{ RvMedia::getImageUrl($img) }}">
-                                                        <img src="{{ RvMedia::getImageUrl($img) }}" alt="{{ $product->name }}"/>
-                                                    </a>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </figure>
-                                <div class="ps-product__variants" data-item="4" data-md="4" data-sm="4" data-arrow="true">
-                                    @foreach ($productImages as $img)
-                                        <div class="item">
-                                            <img src="{{ RvMedia::getImageUrl($img, 'thumb') }}" alt="{{ $product->name }}"/>
-                                        </div>
-                                    @endforeach
-                                </div>
+                            <div class="ps-product__thumbnail">
+                                @include(EcommerceHelper::viewPath('includes.product-gallery'))
                             </div>
                             <div class="ps-product__info">
                                 <h1>{{ $product->name }}</h1>

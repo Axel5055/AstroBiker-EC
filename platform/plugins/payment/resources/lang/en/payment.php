@@ -119,6 +119,9 @@ return [
     'invalid_settings' => 'Settings for :name are invalid!',
     'view_transaction' => 'Transaction ":charge_id"',
     'payment_description' => 'Pay for your order #:order_id at :site_url',
+    'processing_fee' => 'Processing fee (Optional)',
+    'fee_helper' => 'Extra fee will be charged when customer selects this payment method. Enter 0 for no fee.',
+    'payment_fee' => 'Payment fee',
     'payment_log' => [
         'name' => 'Payment Logs',
         'view' => 'View Payment Log #:id',
@@ -127,4 +130,10 @@ return [
         'request' => 'Request',
         'response' => 'Response',
     ],
+    'fee_types' => [
+        'fixed' => 'Fixed',
+        'percentage' => 'Percentage',
+    ],
+    'fee_type' => 'Processing fee type (Optional)',
+    'fee_type_helper' => 'Select how the payment fee should be calculated: as a fixed amount or a percentage of the order total. If you choose a fixed amount, it will be based on the default currency (:currency).',
 ];

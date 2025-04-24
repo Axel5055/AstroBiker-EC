@@ -60,7 +60,8 @@ class ContactSettingRequest extends Request
 
     protected function parseTagInputToArray(string $name): array
     {
-        $data = trim($this->input($name));
+        $data = $this->input($name);
+        $data = is_string($data) ? trim($data) : '';
 
         if (! $data) {
             return [];

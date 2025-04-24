@@ -1,5 +1,9 @@
 class Ecommerce {
     quickSearchAjax = null
+    filterAjax = null
+    lastFilterFormData = null
+    lastFilterFormAction = null
+    filterTimeout = null
 
     constructor() {
         $(document)
@@ -22,31 +26,99 @@ class Ecommerce {
             .on('submit', 'form.bb-product-form-filter', (e) => {
                 e.preventDefault()
 
-                const currentTarget = $(e.currentTarget)
+                const form = $(e.currentTarget)
 
-                const formData = this.#transformFormData(currentTarget.serializeArray())
-                const url = currentTarget.prop('action')
+                // Create a new FormData object
+                const formData = this.#transformFormData(form.serializeArray())
+                const url = form.prop('action')
                 let nextUrl = url
-                let params = []
 
-                formData.map((item) => {
-                    params.push(`${encodeURIComponent(item.name)}=${encodeURIComponent(item.value)}`)
+                // Use URLSearchParams to prevent duplicate parameters
+                const searchParams = new URLSearchParams()
+
+                // Group parameters by name to prevent duplicates
+                const paramsByName = {}
+
+                formData.forEach((item) => {
+                    if (!paramsByName[item.name]) {
+                        paramsByName[item.name] = item.value
+                    }
                 })
 
-                if (params.length) {
-                    nextUrl += `?${params.join('&')}`
+                // Add parameters to URLSearchParams
+                Object.keys(paramsByName).forEach(name => {
+                    if (paramsByName[name]) {
+                        searchParams.set(name, paramsByName[name])
+                    }
+                })
+
+                // Build the URL
+                const queryString = searchParams.toString()
+                if (queryString) {
+                    nextUrl += `?${queryString}`
                 }
 
-                formData.push({ name: '_', value: Date.now() })
+                // Add timestamp to formData for AJAX but not for URL
+                const formDataWithTimestamp = [...formData, { name: '_', value: Date.now() }]
 
+                // Don't reload if URL is the same
                 if (window.location.href === nextUrl) {
                     return
                 }
 
-                this.#ajaxFilterForm(url, formData, nextUrl)
+                // Don't send duplicate requests with the same parameters and same action URL
+                const formDataString = JSON.stringify(formData)
+                const currentFormAction = form.prop('action')
+
+                if (this.lastFilterFormData === formDataString && this.lastFilterFormAction === currentFormAction) {
+                    return
+                }
+
+                this.lastFilterFormData = formDataString
+                this.lastFilterFormAction = currentFormAction
+
+                // Cancel any pending AJAX request
+                if (this.filterAjax) {
+                    this.filterAjax.abort()
+                }
+
+                // Clear any pending timeout
+                if (this.filterTimeout) {
+                    clearTimeout(this.filterTimeout)
+                }
+
+                // Add a small delay to prevent rapid-fire requests
+                this.filterTimeout = setTimeout(() => {
+                    this.#ajaxFilterForm(url, formDataWithTimestamp, nextUrl)
+                }, 100)
             })
             .on('change', 'form.bb-product-form-filter input, form.bb-product-form-filter select', (e) => {
-                $(e.currentTarget).closest('form').trigger('submit')
+                const currentTarget = $(e.currentTarget)
+                const form = currentTarget.closest('form')
+
+                // Special handling for checkboxes with array notation
+                if (currentTarget.attr('type') === 'checkbox' && currentTarget.attr('name') && currentTarget.attr('name').endsWith('[]')) {
+                    const baseName = currentTarget.attr('name').slice(0, -2)
+                    const checkboxes = form.find(`input[name="${currentTarget.attr('name')}"]`).filter(':checked')
+
+                    // Find or create the non-array input
+                    let singleInput = form.find(`input[name="${baseName}"]`)
+                    if (!singleInput.length) {
+                        // Create a hidden input with the base name
+                        form.append(`<input type="hidden" name="${baseName}" value="">`)
+                        singleInput = form.find(`input[name="${baseName}"]`)
+                    }
+
+                    // Collect values from checked checkboxes
+                    const values = checkboxes.map(function() {
+                        return $(this).val()
+                    }).get()
+
+                    // Set the comma-separated values
+                    singleInput.val(values.join(','))
+                }
+
+                form.trigger('submit')
             })
             .on('keyup', '.bb-form-quick-search input', (e) => {
                 this.#ajaxSearchProducts($(e.currentTarget).closest('form'))
@@ -98,16 +170,36 @@ class Ecommerce {
                 const currentTarget = $(e.currentTarget)
                 const form = currentTarget.closest('form')
                 const parent = currentTarget.closest('.bb-product-filter')
-                const input = form.find('input[name="categories[]"]')
+                const categoryId = currentTarget.data('id')
+
+                // Check if we have existing categories input
+                let categoriesInput = form.find('input[name="categories"]')
+
+                // If we don't have a single categories input, look for array notation
+                if (!categoriesInput.length) {
+                    categoriesInput = form.find('input[name="categories[]"]')
+                }
 
                 parent.find('.bb-product-filter-link').removeClass('active')
                 currentTarget.addClass('active')
 
-                if (input.length && currentTarget.data('id')) {
-                    input.val(currentTarget.data('id')).trigger('change')
+                // Remove pagination parameters when changing categories
+                form.find('input[name="page"]').remove()
+                form.find('input[name="per-page"]').remove()
+
+                if (categoriesInput.length && categoryId) {
+                    // If using array notation
+                    if (categoriesInput.attr('name') === 'categories[]') {
+                        categoriesInput.val(categoryId).trigger('change')
+                    } else {
+                        // If using comma-separated values
+                        categoriesInput.val(categoryId).trigger('change')
+                    }
                 } else {
-                    if (! currentTarget.data('id')) {
-                        input.val(null)
+                    if (!categoryId) {
+                        if (categoriesInput.length) {
+                            categoriesInput.val(null)
+                        }
                     }
 
                     form.prop('action', currentTarget.prop('href')).trigger('submit')
@@ -125,9 +217,13 @@ class Ecommerce {
 
                 const form = $('.bb-product-form-filter')
 
+                // Clear all inputs
                 form.find(
-                    'input[type="text"], input[type="hidden"], input[type="checkbox"], input[type="radio"], select'
+                    'input[type="text"], input[type="hidden"], input[type="radio"], select'
                 ).val(null)
+
+                // Uncheck all checkboxes
+                form.find('input[type="checkbox"]').prop('checked', false)
 
                 form.trigger('submit')
             })
@@ -522,15 +618,42 @@ class Ecommerce {
             })
             .on('change', '[data-bb-toggle="product-form-filter-item"]', (e) => {
                 const currentTarget = $(e.currentTarget)
-
                 const $form = $('.bb-product-form-filter')
+                const name = currentTarget.prop('name')
+                const value = currentTarget.val()
 
-                const $input = $form.find(`input[name="${currentTarget.prop('name')}"]`)
+                // Handle both array notation and comma-separated values
+                if (name.endsWith('[]')) {
+                    const baseName = name.slice(0, -2)
+                    let $input = $form.find(`input[name="${baseName}"]`)
 
-                if ($input.length) {
-                    $input.val(currentTarget.val())
-                    $form.trigger('submit')
+                    // If we don't have a single input, create one
+                    if (!$input.length) {
+                        $form.append(`<input type="hidden" name="${baseName}" value="">`)
+                        $input = $form.find(`input[name="${baseName}"]`)
+                    }
+
+                    // Get current values as array and remove duplicates
+                    let currentValues = $input.val() ? $input.val().split(',') : []
+
+                    // Use a Set to automatically remove duplicates
+                    const uniqueValues = new Set(currentValues)
+
+                    // Add the new value
+                    uniqueValues.add(value)
+
+                    // Convert back to array and set the comma-separated values
+                    $input.val(Array.from(uniqueValues).join(','))
+                } else {
+                    // Regular input
+                    const $input = $form.find(`input[name="${name}"]`)
+
+                    if ($input.length) {
+                        $input.val(value)
+                    }
                 }
+
+                $form.trigger('submit')
             })
 
         if ($('.bb-product-price-filter').length) {
@@ -836,10 +959,40 @@ class Ecommerce {
 
     #transformFormData = (formData) => {
         let data = []
+        let groupedData = {}
+        let seenParams = {}
 
-        formData.map((item) => {
-            if (item.value) {
-                data.push(item)
+        // Group array parameters and handle duplicates
+        formData.forEach((item) => {
+            if (!item.value) {
+                return
+            }
+
+            // Check if it's an array parameter (ends with [])
+            if (item.name.endsWith('[]')) {
+                const baseName = item.name.slice(0, -2)
+                if (!groupedData[baseName]) {
+                    groupedData[baseName] = new Set()
+                }
+                // Use a Set to automatically remove duplicates
+                groupedData[baseName].add(item.value)
+            } else {
+                // For non-array parameters, only keep the first occurrence
+                if (!seenParams[item.name]) {
+                    seenParams[item.name] = true
+                    data.push(item)
+                }
+            }
+        })
+
+        // Add grouped parameters as comma-separated values
+        Object.keys(groupedData).forEach(key => {
+            const values = Array.from(groupedData[key])
+            if (values.length > 0) {
+                data.push({
+                    name: key,
+                    value: values.join(',')
+                })
             }
         })
 
@@ -921,15 +1074,47 @@ class Ecommerce {
     #ajaxFilterForm = (url, data, nextUrl) => {
         const form = $('.bb-product-form-filter')
 
-        $.ajax({
+        // If a direct URL is provided without form data, reset the tracking variables
+        if (url && !data) {
+            this.lastFilterFormData = null
+            this.lastFilterFormAction = null
+        }
+
+        // If data is an array, convert it to a proper format for AJAX
+        let ajaxData = data
+        if (Array.isArray(data)) {
+            // Convert to URLSearchParams to handle duplicates
+            const params = new URLSearchParams()
+            const paramsByName = {}
+
+            // Group by name to prevent duplicates
+            data.forEach(item => {
+                if (item.name && item.value) {
+                    paramsByName[item.name] = item.value
+                }
+            })
+
+            // Add to URLSearchParams
+            Object.keys(paramsByName).forEach(name => {
+                params.set(name, paramsByName[name])
+            })
+
+            // Convert to object for jQuery AJAX
+            ajaxData = {}
+            for (const [key, value] of params.entries()) {
+                ajaxData[key] = value
+            }
+        }
+
+        this.filterAjax = $.ajax({
             url: url,
             type: 'GET',
-            data: data,
+            data: ajaxData,
             beforeSend: () => {
                 document.dispatchEvent(
                     new CustomEvent('ecommerce.product-filter.before', {
                         detail: {
-                            data: data,
+                            data: ajaxData,
                             element: form,
                         },
                     })
@@ -940,11 +1125,29 @@ class Ecommerce {
 
                 if (error) {
                     Theme.showError(message)
-
+                    this.filterAjax = null
                     return
                 }
 
-                window.history.pushState(data, null, nextUrl || url)
+                // Ensure the URL doesn't have duplicate parameters
+                let finalUrl = nextUrl || url
+                if (finalUrl.includes('?')) {
+                    const urlParts = finalUrl.split('?')
+                    const baseUrl = urlParts[0]
+                    const params = new URLSearchParams(urlParts[1])
+
+                    // Remove any duplicate parameters
+                    const uniqueParams = new URLSearchParams()
+                    for (const [key, value] of params.entries()) {
+                        if (!uniqueParams.has(key)) {
+                            uniqueParams.set(key, value)
+                        }
+                    }
+
+                    finalUrl = baseUrl + '?' + uniqueParams.toString()
+                }
+
+                window.history.pushState(data, null, finalUrl)
 
                 document.dispatchEvent(
                     new CustomEvent('ecommerce.product-filter.success', {
@@ -955,12 +1158,24 @@ class Ecommerce {
                     })
                 )
 
+                // Reset filterAjax after successful request
+                this.filterAjax = null
+
                 if ($('.bb-product-price-filter').length) {
                     EcommerceApp.initPriceFilter()
                 }
             },
-            error: (error) => Theme.handleError(error),
+            error: (xhr) => {
+                // Don't show error for aborted requests
+                if (xhr.statusText !== 'abort') {
+                    console.error('Filter request failed:', xhr)
+                    Theme.handleError(xhr)
+                }
+            },
             complete: () => {
+                // Always reset the filter timeout and AJAX request
+                this.filterTimeout = null
+                this.filterAjax = null
                 if (typeof Theme.lazyLoadInstance !== 'undefined') {
                     Theme.lazyLoadInstance.update()
                 }
@@ -1332,7 +1547,22 @@ $(() => {
                 $sidebar = $defaultSidebar
             }
 
+            // Store the current active filter link before replacing the sidebar
+            const activeFilterLinks = {};
+            $('.bb-product-filter-link.active').each(function() {
+                const filterGroup = $(this).closest('.bb-product-filter').data('filter-group');
+                if (filterGroup) {
+                    activeFilterLinks[filterGroup] = $(this).data('id');
+                }
+            });
+
             $sidebar.replaceWith(data.additional.filters_html)
+
+            // Restore active state for filter links after sidebar is replaced
+            Object.keys(activeFilterLinks).forEach(group => {
+                const id = activeFilterLinks[group];
+                $(`.bb-product-filter[data-filter-group="${group}"] .bb-product-filter-link[data-id="${id}"]`).addClass('active');
+            });
         }
 
         if ($(document).find('.bb-product-price-filter').length) {

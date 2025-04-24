@@ -186,6 +186,10 @@ return [
             'default_country_at_checkout_page_help' => 'If you select a country, the country will be selected by default at the checkout page.',
             'checkout_product_quantity_editable' => 'Allow customers to change product quantity at the checkout page',
             'checkout_product_quantity_editable_helper' => 'When enabled, customers can modify the quantity of products directly on the checkout page without returning to the cart.',
+            'show_terms_and_policy_checkbox' => 'Show terms and policy checkbox',
+            'show_terms_and_policy_checkbox_helper' => 'If enabled, customers must agree to the terms and policy before placing an order. Please setup Terms and Privacy Policy URL in Appearance -> Theme options first.',
+            'terms_and_policy_checkbox_checked_by_default' => 'Terms and policy checkbox checked by default',
+            'terms_and_policy_checkbox_checked_by_default_helper' => 'If enabled, the terms and policy checkbox will be pre-checked when the checkout form loads.',
         ],
     ],
     'return' => [
@@ -222,6 +226,11 @@ return [
             'only_latin_languages' => 'Only Latin languages',
             'disable_order_invoice_until_order_confirmed' => 'Disable order invoice until order confirmed',
             'date_format' => 'Date format',
+            'languages' => [
+                'arabic' => 'Arabic',
+                'bangladesh' => 'Bengali',
+                'chinese' => 'Chinese',
+            ],
         ],
     ],
     'tax' => [
@@ -244,6 +253,7 @@ return [
             'default_tax_rate' => 'Default tax rate',
             'default_tax_rate_description' => 'Important: it will be applied if no tax selected in product.',
             'select_tax' => '-- Select --',
+            'display_product_price_including_taxes' => 'Display product price including taxes',
         ],
     ],
     'customer' => [

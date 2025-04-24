@@ -55,17 +55,7 @@ class MediaSettingForm extends SettingForm
                 SelectField::class,
                 SelectFieldOption::make()
                     ->label(trans('core/setting::setting.media.driver'))
-                    ->choices(
-                        apply_filters('core_media_drivers', [
-                            'public' => trans('core/setting::setting.media.local_disk'),
-                            's3' => 'Amazon S3',
-                            'r2' => 'Cloudflare R2',
-                            'do_spaces' => 'DigitalOcean Spaces',
-                            'wasabi' => 'Wasabi',
-                            'bunnycdn' => 'BunnyCDN',
-                            'backblaze' => 'Backblaze B2',
-                        ])
-                    )
+                    ->choices(RvMedia::getAvailableDrivers())
                     ->selected($mediaDriver = RvMedia::getMediaDriver())
                     ->colspan(6)
             )

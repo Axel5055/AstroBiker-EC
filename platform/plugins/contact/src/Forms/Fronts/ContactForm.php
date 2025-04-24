@@ -2,7 +2,6 @@
 
 namespace Botble\Contact\Forms\Fronts;
 
-use Botble\Base\Facades\Html;
 use Botble\Base\Forms\FieldOptions\ButtonFieldOption;
 use Botble\Base\Forms\FieldOptions\CheckboxFieldOption;
 use Botble\Base\Forms\FieldOptions\HtmlFieldOption;
@@ -261,8 +260,7 @@ class ContactForm extends FormFront
                                 ->cssClass($this->formInputClass)
                                 ->maxLength(-1)
                         );
-                },
-                12
+                }
             )
             ->when(setting('contact_form_show_terms_checkbox', true), function (self $form): void {
                 $form->add(

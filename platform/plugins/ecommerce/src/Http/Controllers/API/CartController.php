@@ -170,7 +170,7 @@ class CartController extends BaseController
                 ->toApiResponse();
         }
 
-        $cartItems = OrderHelper::handleAddCart($product, $request);
+        $cartItems = OrderHelper::handleAddCart($product, $request, false);
 
         $cartItem = Arr::first(array_filter($cartItems, fn ($item) => $item['id'] == $product->id));
 
@@ -450,10 +450,30 @@ class CartController extends BaseController
     {
         $cartData = $this->getCartData();
 
-        return apply_filters('ecommerce_cart_data_for_response', [
+        $content = Cart::instance('cart')->content();
+
+        if (is_plugin_active('marketplace')) {
+            foreach ($content as $item) {
+                $product = Product::query()->find($item->id);
+
+                if (! $product) {
+                    continue;
+                }
+
+                if ($store = $product->original_product->store) {
+                    $item->options['store'] = [
+                        'id' => $store?->id,
+                        'slug' => $store?->slugable?->key,
+                        'name' => $store?->name,
+                    ];
+                }
+            }
+        }
+
+        return apply_filters('ecommerce_cart_data_for_api_response', [
             'count' => Cart::instance('cart')->count(),
             'total_price' => format_price(Cart::instance('cart')->rawSubTotal()),
-            'content' => Cart::instance('cart')->content(),
+            'content' => $content,
         ], $cartData);
     }
 }

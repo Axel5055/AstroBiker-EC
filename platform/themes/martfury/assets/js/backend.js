@@ -194,7 +194,7 @@
                         })
                     }
 
-                    let slider = $(document).find('.ps-product--quickview .ps-product__images')
+                    let slider = $(document).find('.ps-product--quickview .bb-product-gallery-images')
 
                     if (slider.length) {
                         slider.slick('unslick')
@@ -206,26 +206,16 @@
 
                         slider.html(imageHtml)
 
-                        slider.slick({
-                            slidesToShow: slider.data('item'),
-                            slidesToScroll: 1,
-                            rtl: isRTL,
-                            infinite: false,
-                            arrows: slider.data('arrow'),
-                            focusOnSelect: true,
-                            prevArrow: "<button class='slick-prev slick-arrow'><i class='fa fa-angle-left'></i></button>",
-                            nextArrow: "<button class='slick-next slick-arrow'><i class='fa fa-angle-right'></i></button>",
-                        })
+                        if (typeof EcommerceApp !== 'undefined') {
+                            EcommerceApp.initProductGallery()
+                        }
                     }
 
                     let product = $('.ps-product--detail')
                     if (product.length > 0) {
 
-                        let primary = product.find('.ps-product__gallery')
-                        let second = product.find('.ps-product__variants')
-                        let vertical = product
-                            .find('.ps-product__thumbnail')
-                            .data('vertical')
+                        let primary = product.find('.bb-product-gallery-images')
+                        let second = product.find('.bb-product-gallery-thumbnails')
 
                         if (primary.length) {
                             primary.slick('unslick')
@@ -236,19 +226,6 @@
                             })
 
                             primary.html(imageHtml)
-
-                            primary.slick({
-                                slidesToShow: 1,
-                                slidesToScroll: 1,
-                                rtl: isRTL,
-                                asNavFor: '.ps-product__variants',
-                                fade: true,
-                                dots: false,
-                                infinite: false,
-                                arrows: primary.data('arrow'),
-                                prevArrow: "<button class='slick-prev slick-arrow'><i class='fa fa-angle-left'></i></button>",
-                                nextArrow: "<button class='slick-next slick-arrow'><i class='fa fa-angle-right'></i></button>",
-                            })
                         }
 
                         if (second.length) {
@@ -261,70 +238,11 @@
                             })
 
                             second.html(thumbHtml)
-
-                            second.slick({
-                                slidesToShow: second.data('item'),
-                                slidesToScroll: 1,
-                                rtl: isRTL,
-                                infinite: false,
-                                arrows: second.data('arrow'),
-                                focusOnSelect: true,
-                                prevArrow: "<button class='slick-prev slick-arrow'><i class='fa fa-angle-left'></i></button>",
-                                nextArrow: "<button class='slick-next slick-arrow'><i class='fa fa-angle-right'></i></button>",
-                                asNavFor: '.ps-product__gallery',
-                                vertical: vertical,
-                                responsive: [
-                                    {
-                                        breakpoint: 1200,
-                                        settings: {
-                                            arrows: second.data('arrow'),
-                                            slidesToShow: 4,
-                                            vertical: false,
-                                            prevArrow: "<button class='slick-prev slick-arrow'><i class='fa fa-angle-left'></i></button>",
-                                            nextArrow: "<button class='slick-next slick-arrow'><i class='fa fa-angle-right'></i></button>",
-                                        },
-                                    },
-                                    {
-                                        breakpoint: 992,
-                                        settings: {
-                                            arrows: second.data('arrow'),
-                                            slidesToShow: 4,
-                                            vertical: false,
-                                            prevArrow: "<button class='slick-prev slick-arrow'><i class='fa fa-angle-left'></i></button>",
-                                            nextArrow: "<button class='slick-next slick-arrow'><i class='fa fa-angle-right'></i></button>",
-                                        },
-                                    },
-                                    {
-                                        breakpoint: 480,
-                                        settings: {
-                                            slidesToShow: 3,
-                                            vertical: false,
-                                            prevArrow: "<button class='slick-prev slick-arrow'><i class='fa fa-angle-left'></i></button>",
-                                            nextArrow: "<button class='slick-next slick-arrow'><i class='fa fa-angle-right'></i></button>",
-                                        },
-                                    },
-                                ],
-                            })
-                        }
-                    }
-
-                    $(window).trigger('resize')
-
-                    if (product.length > 0) {
-                        let $gallery = product.find('.ps-product__gallery')
-                        if ($gallery.data('lightGallery')) {
-                            $gallery.data('lightGallery').destroy(true)
                         }
 
-                        $gallery.lightGallery({
-                            selector: '.item a',
-                            thumbnail: true,
-                            share: false,
-                            fullScreen: false,
-                            autoplay: false,
-                            autoplayControls: false,
-                            actualSize: false,
-                        })
+                        if (typeof EcommerceApp !== 'undefined') {
+                            EcommerceApp.initProductGallery()
+                        }
                     }
                 }
             }
@@ -931,23 +849,20 @@
                 success: res => {
                     if (!res.error) {
                         $('#product-quickview .ps-product--quickview').html(res.data)
-                        $('.ps-product--quickview .ps-product__images').slick({
-                            slidesToShow: 1,
-                            slidesToScroll: 1,
-                            rtl: isRTL,
-                            fade: true,
-                            dots: false,
-                            arrows: true,
-                            infinite: false,
-                            prevArrow: "<button class='slick-prev slick-arrow'><i class='fa fa-angle-left'></i></button>",
-                            nextArrow: "<button class='slick-next slick-arrow'><i class='fa fa-angle-right'></i></button>",
-                        })
+
+                        setTimeout(function() {
+                            if (typeof EcommerceApp !== 'undefined') {
+                                EcommerceApp.initProductGallery(true)
+                            }
+                        }, 200)
 
                         $('#product-quickview').modal('show')
 
                         if (typeof Theme.lazyLoadInstance !== 'undefined') {
                             Theme.lazyLoadInstance.update()
                         }
+
+                        document.dispatchEvent(new CustomEvent('ecommerce.quick-view.initialized'))
                     }
                     _self.removeClass('button-loading')
                 },

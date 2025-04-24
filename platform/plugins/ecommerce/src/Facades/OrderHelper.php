@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static array cleanData(array $data)
  * @method static array mergeOrderSessionData(string|null $token, array|string $data)
  * @method static void clearSessions(string|null $token)
- * @method static array handleAddCart(\Botble\Ecommerce\Models\Product $product, \Illuminate\Http\Request $request)
+ * @method static array handleAddCart(\Botble\Ecommerce\Models\Product $product, \Illuminate\Http\Request $request, bool $relativePath = true)
  * @method static array getProductOptionData(array $data, string|int|null $productId = null)
  * @method static array processAddressOrder(string|int $currentUserId, array $sessionData, \Illuminate\Http\Request $request)
  * @method static array checkAndCreateOrderAddress(array $addressData, array $sessionData)

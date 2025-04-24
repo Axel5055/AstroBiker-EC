@@ -1076,6 +1076,8 @@ class Theme implements ThemeContract
             $attributes['style'] = sprintf('max-height: %s', is_numeric($height) ? "{$height}px" : $height);
         }
 
+        $attributes['loading'] = false;
+
         return apply_filters('theme_logo_image', RvMedia::image($logo, $this->getSiteTitle(), attributes: $attributes, lazy: false));
     }
 

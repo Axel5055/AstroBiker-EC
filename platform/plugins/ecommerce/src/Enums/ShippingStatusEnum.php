@@ -52,11 +52,14 @@ class ShippingStatusEnum extends Enum
 
     public const CANCELED = 'canceled';
 
+    public const RECOGER = 'Listo para recoger en tienda';
+
     public static $langPath = 'plugins/ecommerce::shipping.statuses';
 
     public function toHtml(): HtmlString|string
     {
         $color = match ($this->value) {
+            self::RECOGER => 'info',
             self::NOT_APPROVED, self::PENDING, self::DELAY_PICKING, self::APPROVED => 'warning',
             self::PICKING, self::READY_TO_BE_SHIPPED_OUT, self::DELIVERING, self::ARRANGE_SHIPMENT => 'info',
             self::NOT_PICKED, self::CANCELED, self::NOT_DELIVERED => 'danger',

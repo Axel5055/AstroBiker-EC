@@ -1,0 +1,20 @@
+{
+    "name": "botble/envia",
+    "description": "Plugin de integración con Envia.com para Botble CMS",
+    "type": "package",
+    "require": {
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Botble\\Envia\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Botble\\Envia\\Providers\\EnviaServiceProvider"
+            ]
+        }
+    }
+}

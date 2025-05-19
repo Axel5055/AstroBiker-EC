@@ -272,10 +272,10 @@ class Shippo
     protected function ratesByCurrency(array $rates): array
     {
         $rates = collect($rates)
-                ->filter(function ($rate) {
-                    return in_array($this->currency, [$rate['currency'], $rate['currency_local']]);
-                })
-                ->toArray();
+            ->filter(function ($rate) {
+                return in_array($this->currency, [$rate['currency'], $rate['currency_local']]);
+            })
+            ->toArray();
 
         $newRates = [];
         foreach ($rates as $key => $rate) {
@@ -387,9 +387,11 @@ class Shippo
 
         $params['parcels'] = $this->getCachedParcelInfo($parcelsInfo);
 
-        if (isset($inParams['address_from']['country'])
+        if (
+            isset($inParams['address_from']['country'])
             && isset($inParams['address_to']['country'])
-            && $inParams['address_from']['country'] != $inParams['address_to']['country']) {
+            && $inParams['address_from']['country'] != $inParams['address_to']['country']
+        ) {
             $params['customs_declaration'] = $this->getCachedCustomsInfo($inParams);
         }
 
@@ -707,10 +709,12 @@ class Shippo
 
     protected function prepareCustomsItem($itemInParcel): array
     {
-        if (empty($itemInParcel['name']) ||
+        if (
+            empty($itemInParcel['name']) ||
             ! isset($itemInParcel['weight']) ||
             empty($itemInParcel['qty']) ||
-            ! isset($itemInParcel['price'])) {
+            ! isset($itemInParcel['price'])
+        ) {
             $this->log([__LINE__, 'Item is invalid, so skip it ' . print_r($itemInParcel, true)]);
 
             return [];
@@ -904,7 +908,8 @@ class Shippo
                 ShippingStatusEnum::DELIVERING,
                 ShippingStatusEnum::DELIVERED,
                 ShippingStatusEnum::NOT_DELIVERED,
-            ])) {
+            ])
+        ) {
             return true;
         }
 

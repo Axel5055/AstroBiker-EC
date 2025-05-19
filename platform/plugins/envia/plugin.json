@@ -3,9 +3,9 @@
     "name": "Envia",
     "namespace": "Botble\\Envia\\",
     "provider": "Botble\\Envia\\Providers\\EnviaServiceProvider",
-    "author": "Botble Technologies",
-    "url": "https://botble.com",
-    "version": "1.0.3",
-    "description": "Multi-Carrier Envia Shipping Rates & Address Validation for Ecommerce",
+    "author": "TuNombre o Empresa",
+    "url": "https://tusitio.com",
+    "version": "1.0.0",
+    "description": "Integración completa con Envia.com para ecommerce",
     "minimum_core_version": "7.3.0"
 }

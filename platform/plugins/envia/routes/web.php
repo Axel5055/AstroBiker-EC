@@ -12,40 +12,34 @@ Route::group(['namespace' => 'Botble\Envia\Http\Controllers'], function (): void
             'permission' => 'ecommerce.shipments.index',
         ], function (): void {
             Route::controller('EnviaController')->group(function (): void {
-                // Mostrar detalles del envío
                 Route::get('show/{id}', [
                     'as' => 'show',
                     'uses' => 'show',
                 ]);
 
-                // Crear transacción (generar etiqueta)
                 Route::post('transactions/create/{id}', [
                     'as' => 'transactions.create',
                     'uses' => 'createTransaction',
                     'permission' => 'ecommerce.shipments.edit',
                 ]);
 
-                // Obtener tarifas
                 Route::get('rates/{id}', [
                     'as' => 'rates',
                     'uses' => 'getRates',
                 ]);
 
-                // Actualizar tarifa seleccionada
                 Route::post('update-rate/{id}', [
                     'as' => 'update-rate',
                     'uses' => 'updateRate',
                     'permission' => 'ecommerce.shipments.edit',
                 ]);
 
-                // Ver logs
                 Route::get('view-logs/{file}', [
                     'as' => 'view-log',
                     'uses' => 'viewLog',
                 ]);
             });
 
-            // Configuración general de Envía
             Route::group(['prefix' => 'settings', 'as' => 'settings.'], function (): void {
                 Route::post('update', [
                     'as' => 'update',
@@ -57,7 +51,6 @@ Route::group(['namespace' => 'Botble\Envia\Http\Controllers'], function (): void
         });
     });
 
-    // Si usas Marketplace, registramos también rutas para vendedores
     if (is_plugin_active('marketplace')) {
         Theme::registerRoutes(function (): void {
             Route::group([
@@ -95,7 +88,6 @@ Route::group(['namespace' => 'Botble\Envia\Http\Controllers'], function (): void
     }
 });
 
-// Webhook para recibir notificaciones de Envía (opcional)
 Route::group([
     'namespace' => 'Botble\Envia\Http\Controllers',
     'prefix' => 'envia',

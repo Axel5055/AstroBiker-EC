@@ -11,11 +11,8 @@
     <label for="shipping-method-shippo-{{ $index }}">
         <div>
             @if ($image = Arr::get($item, 'provider_image_75'))
-                <img
-                    src="{{ $image }}"
-                    alt="{{ Arr::get($item, 'servicelevel.name') }}"
-                    style="max-height: 40px; max-width: 55px"
-                >
+                <img src="{{ $image }}" alt="{{ Arr::get($item, 'servicelevel.name') }}"
+                    style="max-height: 40px; max-width: 55px">
             @endif
             <span>
                 {{ Arr::get($item, 'servicelevel.name') }} -

@@ -1,8 +1,11 @@
 @php
     $status = setting('shipping_envia_status', 0);
     $apiKey = setting('shipping_envia_api_key') ?: '';
+    $test = setting('shipping_envia_sandbox', 1) ?: 0;
     $logging = setting('shipping_envia_logging', 1) ?: 0;
+    $cacheResponse = setting('shipping_envia_cache_response', 1) ?: 0;
 @endphp
+
 <x-core::card>
     <x-core::table :striped="false" :hover="false">
         <x-core::table.body>
@@ -10,21 +13,24 @@
                 <x-core::icon name="ti ti-truck-delivery" />
             </x-core::table.body.cell>
             <x-core::table.body.cell style="width: 20%">
-                <img class="filter-black" src="{{ url('vendor/core/plugins/envia/images/logo-dark.svg') }}" alt="Envía">
+                <img class="filter-black" src="{{ url('vendor/core/plugins/envia/images/logo-dark.svg') }}"
+                    alt="Envia.com">
             </x-core::table.body.cell>
             <x-core::table.body.cell>
-                <a href="https://www.envia.com/" target="_blank" class="fw-semibold">Envía</a>
-                <p class="mb-0">{{ trans('plugins/envia::envia.description') }}</p>
+                <a href="https://www.envia.com/" target="_blank" class="fw-semibold">Envia.com</a>
+                <p class="mb-0">Servicio de logística para generar envíos con múltiples paqueterías.</p>
             </x-core::table.body.cell>
+
             <x-core::table.body.row class="bg-white">
                 <x-core::table.body.cell colspan="3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div @class(['payment-name-label-group', 'd-none' => !$status])>
                                 <span class="payment-note v-a-t">{{ trans('plugins/payment::payment.use') }}:</span>
-                                <label class="ws-nm inline-display method-name-label">Envía</label>
+                                <label class="ws-nm inline-display method-name-label">Envia.com</label>
                             </div>
                         </div>
+
                         <x-core::button data-bs-toggle="collapse" href="#collapse-shipping-method-envia"
                             aria-expanded="false" aria-controls="collapse-shipping-method-envia">
                             @if ($status)
@@ -36,97 +42,93 @@
                     </div>
                 </x-core::table.body.cell>
             </x-core::table.body.row>
+
             <x-core::table.body.row class="collapse" id="collapse-shipping-method-envia">
                 <x-core::table.body.cell class="border-left" colspan="3">
                     <x-core::form :url="route('ecommerce.shipments.envia.settings.update')">
                         <div class="row">
                             <div class="col-sm-6">
                                 <x-core::alert type="warning">
-                                    <x-slot:title>
-                                        {{ trans('plugins/envia::envia.note_0') }}
-                                    </x-slot:title>
+                                    <x-slot:title>Nota importante</x-slot:title>
+
                                     <ul class="ps-3">
                                         <li style="list-style-type: circle;">
-                                            <span>{!! BaseHelper::clean(
-                                                trans('plugins/envia::envia.note_1', ['link' => 'https://docs.botble.com/farmart/1.x/usage-location']),
-                                            ) !!}</span>
+                                            <span>Configura correctamente tu cuenta en <a href="https://www.envia.com/"
+                                                    target="_blank">Envia.com</a>.</span>
                                         </li>
                                         <li style="list-style-type: circle;">
-                                            <span>{{ trans('plugins/envia::envia.note_2') }}</span>
+                                            <span>Asegúrate de ingresar una dirección de origen válida en los ajustes de
+                                                envío.</span>
                                         </li>
                                         <li style="list-style-type: circle;">
-                                            <span>{!! BaseHelper::clean(trans('plugins/envia::envia.note_3', ['link' => route('ecommerce.settings.shipping')])) !!}</span>
+                                            <span>Consulta la <a href="https://enviaya.com.mx/docs/api"
+                                                    target="_blank">documentación oficial</a> para más detalles
+                                                técnicos.</span>
                                         </li>
-                                        <li style="list-style-type: circle;">
-                                            <span>{!! BaseHelper::clean(trans('plugins/envia::envia.note_4', ['link' => 'https://developers.envia.com/'])) !!}</span>
-                                        </li>
-                                        @if (is_plugin_active('marketplace'))
-                                            <li style="list-style-type: circle;">
-                                                <span>{{ trans('plugins/envia::envia.note_5') }}</span>
-                                            </li>
-                                        @endif
                                     </ul>
                                 </x-core::alert>
+
                                 <x-core::form.label>
-                                    {{ trans('plugins/envia::envia.configuration_instruction', ['name' => 'Envía']) }}
+                                    Instrucciones para configurar Envia.com
                                 </x-core::form.label>
+
                                 <div>
-                                    <p>{{ trans('plugins/envia::envia.configuration_requirement', ['name' => 'Envía']) }}:
-                                    </p>
+                                    <p>Paso a paso:</p>
+
                                     <ol>
                                         <li>
                                             <p>
-                                                <a href="https://www.envia.com/register/" target="_blank">
-                                                    {{ trans('plugins/envia::envia.service_registration', ['name' => 'Envía']) }}
+                                                <a href="https://enviaya.com.mx/users/sign_up" target="_blank">
+                                                    Regístrate en Envia.com
                                                 </a>
                                             </p>
                                         </li>
                                         <li>
-                                            <p>{{ trans('plugins/envia::envia.after_service_registration_msg', ['name' => 'Envía']) }}
-                                            </p>
+                                            <p>Desde tu panel, ve al área de desarrolladores y copia tu clave API.</p>
                                         </li>
                                         <li>
-                                            <p>{{ trans('plugins/envia::envia.enter_api_key') }}</p>
+                                            <p>Pega esa clave en el siguiente campo.</p>
                                         </li>
                                     </ol>
                                 </div>
                             </div>
+
                             <div class="col-sm-6">
                                 <p class="text-muted">
-                                    {{ trans('plugins/envia::envia.please_provide_information') }}
-                                    <a href="https://www.envia.com/" target="_blank">Envía</a>:
+                                    Proporciona tu clave API de
+                                    <a href="https://enviaya.com.mx" target="_blank">Envia.com</a>:
                                 </p>
-                                <x-core::form.text-input name="shipping_envia_api_key" :label="trans('plugins/envia::envia.api_token')"
-                                    placeholder="<API-KEY>" :disabled="BaseHelper::hasDemoModeEnabled()" :value="BaseHelper::hasDemoModeEnabled() ? Str::mask($apiKey, '*', 10) : $apiKey" />
+
+                                <x-core::form.text-input name="shipping_envia_api_key" label="Clave API"
+                                    placeholder="ENVIA-API-KEY" :disabled="BaseHelper::hasDemoModeEnabled()" :value="BaseHelper::hasDemoModeEnabled() ? Str::mask($apiKey, '*', 10) : $apiKey" />
+
+                                <x-core::form-group>
+                                    <x-core::form.toggle name="shipping_envia_sandbox" :checked="$test"
+                                        label="Modo sandbox (pruebas)" />
+                                </x-core::form-group>
+
                                 <x-core::form-group>
                                     <x-core::form.toggle name="shipping_envia_status" :checked="$status"
-                                        :label="trans('plugins/envia::envia.activate')" />
+                                        label="Activar Envia.com" />
                                 </x-core::form-group>
+
                                 <x-core::form-group>
                                     <x-core::form.toggle name="shipping_envia_logging" :checked="$logging"
-                                        :label="trans('plugins/envia::envia.logging')" />
-                                    <x-core::form.helper-text>
-                                        {{ trans('plugins/envia::envia.enable_logging_desc') }}
-                                    </x-core::form.helper-text>
+                                        label="Habilitar logs" />
                                 </x-core::form-group>
-                                @if (!empty($logFiles))
-                                    <div class="form-group mb-3">
-                                        <p class="mb-0">{{ __('Log files') }}: </p>
-                                        <ul class="list-unstyled">
-                                            @foreach ($logFiles as $logFile)
-                                                <li><a href="{{ route('ecommerce.shipments.envia.view-log', $logFile) }}"
-                                                        target="_blank"><strong>- {{ $logFile }} <i
-                                                                class="fa fa-external-link"></i></strong></a></li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                @endif
+
+                                <x-core::form-group>
+                                    <x-core::form.toggle name="shipping_envia_cache_response" :checked="$cacheResponse"
+                                        label="Cachear respuestas" />
+                                </x-core::form-group>
+
                                 <x-core::alert type="warning">
-                                    {{ trans('plugins/envia::envia.not_available_in_cod_payment_method') }}
+                                    Este método de envío no está disponible con pagos contra entrega (COD).
                                 </x-core::alert>
+
                                 @env('demo')
                                 <x-core::alert type="danger">
-                                    {{ trans('plugins/envia::envia.disabled_in_demo_mode') }}
+                                    Este método está deshabilitado en modo demostración.
                                 </x-core::alert>
                             @else
                                 <div class="text-end">

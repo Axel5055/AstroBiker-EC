@@ -11,8 +11,7 @@ class Plugin extends PluginOperationAbstract
     {
         Setting::delete([
             'shipping_envia_status',
-            'shipping_envia_test_key',
-            'shipping_envia_production_key',
+            'shipping_envia_api_key',
             'shipping_envia_sandbox',
             'shipping_envia_logging',
             'shipping_envia_cache_response',

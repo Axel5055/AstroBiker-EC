@@ -17,7 +17,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 use Throwable;
 
-#[AsCommand('cms:envia:init', 'Envía initialization')]
+#[AsCommand('cms:envia:init', 'Envia initialization')]
 class InitEnviaCommand extends Command implements PromptsForMissingInput
 {
     use ConfirmableTrait;
@@ -33,27 +33,26 @@ class InitEnviaCommand extends Command implements PromptsForMissingInput
         $settings = [
             'ecommerce_load_countries_states_cities_from_location_plugin' => '1',
             'ecommerce_zip_code_enabled' => '1',
-            'shipping_envia_api_key' => $key,
+            'shipping_envia_test_key' => $key,
             'shipping_envia_status' => $key ? '1' : '0',
         ];
 
         $this->loadLocation();
 
         $city = null;
-        $country = Country::query()->where(['code' => 'US'])->first();
+        $country = Country::query()->where(['code' => 'MX'])->first(); // México
         if ($country) {
-            $city = City::query()->where(['name' => 'San Francisco', 'country_id' => $country->id])->first();
+            $city = City::query()->where(['name' => 'Ciudad de México', 'country_id' => $country->id])->first();
         }
 
         if ($city) {
             $countryId = (string) $city->country_id;
             $stateId = (string) $city->state_id;
             $cityId = (string) $city->id;
-            $zipCode = '94117';
-            $address = '215 Clayton St.';
-            $phone = '+1 555 341 9393';
+            $zipCode = '01000';
+            $address = 'Insurgentes Sur 1234';
+            $phone = '+52 55 1234 5678';
 
-            // Actualiza la información del almacén principal
             $storeLocator = StoreLocator::query()->where(['is_shipping_location' => 1, 'is_primary' => 1])->first();
             if ($storeLocator) {
                 $storeLocator->update([
@@ -64,7 +63,6 @@ class InitEnviaCommand extends Command implements PromptsForMissingInput
                     'city' => $cityId,
                 ]);
 
-                // Guardamos también en las configuraciones globales
                 $settings = array_merge($settings, [
                     'ecommerce_store_phone' => $phone,
                     'ecommerce_store_address' => $address,
@@ -77,7 +75,6 @@ class InitEnviaCommand extends Command implements PromptsForMissingInput
                 $this->info('Updated store locator id: ' . $storeLocator->id);
             }
 
-            // Si está activo Marketplace, también actualizamos el primer vendedor
             if (is_plugin_active('marketplace')) {
                 $store = DB::table('mp_stores')->first();
                 if ($store) {
@@ -92,41 +89,40 @@ class InitEnviaCommand extends Command implements PromptsForMissingInput
                             'phone' => $phone,
                         ]);
 
-                    $this->info('Updated marketplace store id: ' . $store->id);
+                    $this->info('Updated store id: ' . $store->id);
                 }
             }
 
-            // Dirección de cliente de ejemplo (San Diego)
-            $city2 = City::query()->where(['name' => 'San Diego', 'country_id' => '1'])->first();
+            $city2 = City::query()->where(['name' => 'Guadalajara', 'country_id' => $country->id])->first();
             if ($city2) {
                 $address = Address::query()->where(['is_default' => 1])->first();
-                $address->update([
-                    'phone' => '+1 555 341 9393',
-                    'country' => $city2->country_id,
-                    'state' => $city2->state_id,
-                    'city' => $city2->id,
-                    'address' => '2920 Zoo Drive',
-                    'zip_code' => '92101',
-                ]);
+                if ($address) {
+                    $address->update([
+                        'phone' => '+52 33 1234 5678',
+                        'country' => $city2->country_id,
+                        'state' => $city2->state_id,
+                        'city' => $city2->id,
+                        'address' => 'Av. Vallarta 2345',
+                        'zip_code' => '44100',
+                    ]);
 
-                $this->info('Updated address customer id: ' . $address->customer_id);
+                    $this->info('Updated address customer id: ' . $address->customer_id);
+                }
             }
         }
 
-        // Elimina configuraciones antiguas y guarda las nuevas
         Setting::delete(array_keys($settings));
         Setting::set($settings)->save();
 
-        $this->components->info('Envía configuration initialized successfully!');
+        $this->components->info('Envia configuration initialized successfully!');
 
         return self::SUCCESS;
     }
 
     public function loadLocation(): void
     {
-        $country = Country::query()->where(['code' => 'US'])->first();
-        if (!$country) {
-            // Limpia ubicaciones existentes
+        $country = Country::query()->where(['code' => 'MX'])->first(); // Carga MX por defecto
+        if (! $country) {
             City::query()->truncate();
             State::query()->truncate();
             Country::query()->truncate();
@@ -135,9 +131,9 @@ class InitEnviaCommand extends Command implements PromptsForMissingInput
             DB::table('countries_translations')->truncate();
 
             try {
-                Location::downloadRemoteLocation('us');
+                Location::downloadRemoteLocation('mx');
                 $this->info('Loaded location successfully!');
-            } catch (Throwable $th) {
+            } catch (Throwable) {
                 $this->warn('Cannot load location!');
             }
         }
@@ -146,7 +142,7 @@ class InitEnviaCommand extends Command implements PromptsForMissingInput
     protected function configure(): void
     {
         $this
-            ->addOption('key', null, InputOption::VALUE_REQUIRED, 'The API Token to use for Envía')
+            ->addOption('key', null, InputOption::VALUE_REQUIRED, 'The Envia API Token to use')
             ->addOption('force', 'f', null, 'Force the operation to run when in production');
     }
 }

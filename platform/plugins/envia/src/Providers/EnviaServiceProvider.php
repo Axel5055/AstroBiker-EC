@@ -3,7 +3,7 @@
 namespace Botble\Envia\Providers;
 
 use Botble\Base\Traits\LoadAndPublishDataTrait;
-use Botble\Shippo\Http\Middleware\WebhookMiddleware;
+use Botble\Envia\Http\Middleware\WebhookMiddleware;
 use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,7 +13,7 @@ class EnviaServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        if (! is_plugin_active('ecommerce')) {
+        if (!is_plugin_active('ecommerce')) {
             return;
         }
 
@@ -22,7 +22,7 @@ class EnviaServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if (! is_plugin_active('ecommerce')) {
+        if (!is_plugin_active('ecommerce')) {
             return;
         }
 
@@ -33,25 +33,20 @@ class EnviaServiceProvider extends ServiceProvider
             ->loadAndPublishConfigurations(['general'])
             ->publishAssets();
 
-        // Registrar middleware opcional (si usas webhooks)
         $this->app['events']->listen(RouteMatched::class, function (): void {
-            $this->app['router']->aliasMiddleware('envia.webhook', WebhookMiddleware::class);
+            //$this->app['router']->aliasMiddleware('envia.webhook', WebhookMiddleware::class);
         });
 
-        // Añadir canal de logging personalizado para Envía
         $config = $this->app['config'];
-        if (! $config->has('logging.channels.envia')) {
+        if (!$config->has('logging.channels.envia')) {
             $config->set([
                 'logging.channels.envia' => [
                     'driver' => 'daily',
                     'path' => storage_path('logs/envia.log'),
-                    'level' => 'debug',
-                    'days' => 7,
                 ],
             ]);
         }
 
-        // Registrar otros providers relacionados si existen
         $this->app->register(HookServiceProvider::class);
         $this->app->register(CommandServiceProvider::class);
     }
